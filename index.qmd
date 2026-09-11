@@ -1,5 +1,5 @@
 ---
-title: "Florida Census Demographics (2000–2020)"
+title: "Florida Retirement Age Demographics (2000–2020)"
 ---
 
 ```{r}
@@ -12,57 +12,42 @@ library(sf)
 library(leaflet)
 library(htmltools)
 
-# Load county boundaries and decennial census data
-fl_geo  <- read_rds("data/fl_geo.rds")
-fl_race <- read_rds("data/fl_race_2000_2020.rds")
+# Load county boundaries and decennial census age data
+fl_geo <- read_rds("data/fl_geo.rds")
+fl_age <- read_rds("data/fl_age_2000_2020.rds")
 
 # Reshape data to wide format to compute percentage point changes (2000 to 2020)
-race_wide <- fl_race |>
+age_wide <- fl_age |>
   mutate(pct = round(100 * (value / summary_value), 1)) |>
-  select(GEOID, variable, year, pct) |>
-  pivot_wider(names_from = c(variable, year), values_from = pct) |>
-  mutate(
-    diff_hisp  = round(hispanic_2020 - hispanic_2000, 1),
-    diff_black = round(black_2020 - black_2000, 1),
-    diff_white = round(white_2020 - white_2000, 1),
-    diff_asian = round(asian_2020 - asian_2000, 1)
-  )
+  select(GEOID, year, pct) |>
+  pivot_wider(names_from = year, values_from = pct, names_prefix = "pct_") |>
+  mutate(diff_age = round(pct_2020 - pct_2000, 1))
 
 # Combine with county geometries and reproject to WGS84
-fl_map <- left_join(fl_geo, race_wide, by = "GEOID") |>
+fl_map <- left_join(fl_geo, age_wide, by = "GEOID") |>
   st_transform(4326)
 
-# Create hover labels summarizing all four groups for each county
+# Create hover labels summarizing retirement-aged population for each county
 labels <- sprintf(
   "<strong>%s</strong><br/>
-   Hispanic: %s%% &rarr; %s%% (%+0.1f pts)<br/>
-   White: %s%% &rarr; %s%% (%+0.1f pts)<br/>
-   Black: %s%% &rarr; %s%% (%+0.1f pts)<br/>
-   Asian: %s%% &rarr; %s%% (%+0.1f pts)",
+   Ages 65+: %s%% (2000) &rarr; %s%% (2020)<br/>
+   Change: %+0.1f percentage points",
   fl_map$NAME,
-  fl_map$hispanic_2000, fl_map$hispanic_2020, fl_map$diff_hisp,
-  fl_map$white_2000, fl_map$white_2020, fl_map$diff_white,
-  fl_map$black_2000, fl_map$black_2020, fl_map$diff_black,
-  fl_map$asian_2000, fl_map$asian_2020, fl_map$diff_asian
+  fl_map$pct_2000, fl_map$pct_2020, fl_map$diff_age
 ) |> lapply(HTML)
 
-# Define color scales for each demographic group
-pal_hisp  <- colorNumeric("YlOrRd", domain = fl_map$diff_hisp)
-pal_white <- colorNumeric("Blues", domain = fl_map$diff_white)
-pal_black <- colorNumeric("Purples", domain = fl_map$diff_black)
-pal_asian <- colorNumeric("Greens", domain = fl_map$diff_asian)
+# Define color scale for change in percentage of residents aged 65 and older
+pal_age <- colorNumeric("YlOrRd", domain = fl_map$diff_age)
 ```
 
-## Two Decades of Demographic Change Across Florida
+## Two Decades of Change in Florida's Retirement-Age Population
 
-Between 2000 and 2020, Florida saw significant demographic shifts across all major racial and ethnic groups:
+Between 2000 and 2020, Florida experienced a notable shift in the share of residents aged 65 and older (traditional retirement age):
 
-- **Hispanic**: Substantial increases statewide, especially in central and southwest Florida.
-- **White (non-Hispanic)**: Decreased as a overall percentage of population in almost all 67 counties.
-- **Black**: Steady population shares in northern counties, with growth in select central and southern metros.
-- **Asian**: Steady percentage growth across major suburban and university counties.
+- **Statewide Aging**: Many counties saw substantial increases in their retirement-aged population share over these two decades.
+- **Geographic Variation**: Growth in the 65+ demographic was especially pronounced in central and coastal retirement destinations.
 
-Use the radio buttons in the upper right to toggle which demographic shift colors the map. Hover over any county to view the full 20-year shift for all four groups.
+Hover over any county to view its 2000 share, 2020 share, and total percentage-point change.
 
 ```{r}
 #| label: interactive-map
@@ -72,31 +57,15 @@ Use the radio buttons in the upper right to toggle which demographic shift color
 leaflet(fl_map, width = "100%", height = "540px") |>
   addTiles() |>
   addPolygons(
-    group = "Hispanic Change",
-    fillColor = ~pal_hisp(diff_hisp),
+    fillColor = ~pal_age(diff_age),
     fillOpacity = 0.7, weight = 1, color = "white",
-    label = labels
+    label = labels,
+    highlightOptions = highlightOptions(weight = 2, color = "#666", fillOpacity = 0.9, bringToFront = TRUE)
   ) |>
-  addPolygons(
-    group = "White Change",
-    fillColor = ~pal_white(diff_white),
-    fillOpacity = 0.7, weight = 1, color = "white",
-    label = labels
-  ) |>
-  addPolygons(
-    group = "Black Change",
-    fillColor = ~pal_black(diff_black),
-    fillOpacity = 0.7, weight = 1, color = "white",
-    label = labels
-  ) |>
-  addPolygons(
-    group = "Asian Change",
-    fillColor = ~pal_asian(diff_asian),
-    fillOpacity = 0.7, weight = 1, color = "white",
-    label = labels
-  ) |>
-  addLayersControl(
-    baseGroups = c("Hispanic Change", "White Change", "Black Change", "Asian Change"),
-    options = layersControlOptions(collapsed = FALSE)
+  addLegend(
+    pal = pal_age,
+    values = ~diff_age,
+    title = "Change in Ages 65+<br/>(percentage points)",
+    position = "bottomright"
   )
 ```

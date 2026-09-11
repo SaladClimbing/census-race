@@ -1,1 +1,81 @@
-/* css styles */
+/* Codeberg-inspired theme for Quarto */
+
+:root {
+  --cb-blue: #2185d0;
+  --cb-blue-hover: #1678c2;
+  --cb-blue-active: #0e64a0;
+  --cb-border: #d4d4d8;
+  --cb-code-bg: #f4f4f5;
+}
+
+/* Codeberg signature blue top navbar */
+.navbar {
+  background-color: var(--cb-blue) !important;
+  border-bottom: 1px solid #1a6da9;
+}
+
+.navbar .navbar-brand {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.navbar .nav-link {
+  color: #ffffff !important;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+  background-color: rgba(0, 0, 0, 0.12);
+  color: #ffffff !important;
+}
+
+.navbar .nav-link.active {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  font-weight: 600;
+}
+
+/* Links & accents */
+a {
+  color: var(--cb-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--cb-blue-hover);
+  text-decoration: underline;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--cb-blue) !important;
+  border-color: var(--cb-blue) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--cb-blue-hover) !important;
+  border-color: var(--cb-blue-hover) !important;
+}
+
+/* Headings with forge-style dividing border */
+h1, h2 {
+  border-bottom: 1px solid var(--cb-border);
+  padding-bottom: 0.3em;
+}
+
+/* Inline code and code blocks */
+code:not(pre code) {
+  background-color: var(--cb-code-bg);
+  border: 1px solid var(--cb-border);
+  border-radius: 3px;
+  padding: 0.15em 0.35em;
+  font-size: 0.9em;
+}
+
+/* Table of contents active indicator */
+.sidebar nav[role="doc-toc"] ul li a.active {
+  border-left-color: var(--cb-blue) !important;
+  color: var(--cb-blue) !important;
+}

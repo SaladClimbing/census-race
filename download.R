@@ -72,3 +72,33 @@ fl_race_all <- bind_rows(
 )
 
 write_rds(fl_race_all, "data/fl_race_2000_2020.rds")
+
+# Download 2000 age 65+ data (P012)
+age_vars_2000 <- c(paste0("P0120", 20:25), paste0("P0120", 44:49))
+fl_age_2000 <- get_decennial(
+  geography = "county",
+  variables = age_vars_2000,
+  summary_var = "P012001",
+  state = "FL",
+  year = 2000
+) |>
+  group_by(GEOID, NAME, summary_value) |>
+  summarize(value = sum(value), .groups = "drop") |>
+  mutate(variable = "age65plus", year = 2000)
+
+# Download 2020 age 65+ data (P12 from DHC)
+age_vars_2020 <- c(paste0("P12_0", 20:25, "N"), paste0("P12_0", 44:49, "N"))
+fl_age_2020 <- get_decennial(
+  geography = "county",
+  variables = age_vars_2020,
+  summary_var = "P12_001N",
+  state = "FL",
+  year = 2020,
+  sumfile = "dhc"
+) |>
+  group_by(GEOID, NAME, summary_value) |>
+  summarize(value = sum(value), .groups = "drop") |>
+  mutate(variable = "age65plus", year = 2020)
+
+fl_age_all <- bind_rows(fl_age_2000, fl_age_2020)
+write_rds(fl_age_all, "data/fl_age_2000_2020.rds")
